@@ -48,8 +48,6 @@ function build_kvmtool {
 
 function build_linux {
     cd $BUILDCONF_DIR
-    
-    make -f linux.mk dt && \
     make -f linux.mk kernel && \
     make -f linux.mk debian 
 }

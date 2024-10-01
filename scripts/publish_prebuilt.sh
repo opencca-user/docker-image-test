@@ -43,8 +43,7 @@ function release_kernel {
 
     ./linux.mk clean $RUN_ARGS && \
     ./linux.mk help $RUN_ARGS && \
-    ./linux.mk dt $RUN_ARGS && \
-    ./linux.mk debian $RUN_ARGS 
+    ./linux.mk debian $RUN_ARGS || { echo "Fail during build"; exit 1; }
 
     
     ls -al $DEBIAN_RELEASE_DIR

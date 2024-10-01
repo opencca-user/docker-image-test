@@ -2,9 +2,9 @@
 
 include env_aarch64.mk
 
-LOG ?= 10 ## set log level for tfa and rmm
-DEBUG ?= 0 ## set debug mode for tfa and rmm
-ENABLE_OPENCCA_PERF ?= 0 ## enable opencca perf mode
+LOG = 50 ## set log level for tfa and rmm
+DEBUG = 1 ## set debug mode for tfa and rmm
+ENABLE_OPENCCA_PERF = 1 ## enable opencca perf mode
 CLEAN_BUILD ?= 0 ## remove build files before build
 
 $(info using LOG=$(LOG))

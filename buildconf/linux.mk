@@ -1,50 +1,11 @@
 #!/usr/bin/make -f
 include env_aarch64.mk
 
-# .ONESHELL:
 SHELL := /bin/bash
-# .SHELLFLAGS := -e
-
 LOCALVERSION ?= -opencca-wip ## kernel version suffix
 
 .PHONY: build
 build: kernel ## see kernel
-
-# ---------------
-# Device tree
-# ---------------
-
-DEVICE_DTB := rockchip/rk3588-rock-5b.dtb
-DEVICE_DTB_PATH := arch/arm64/boot/dts/$(DEVICE_DTB)
-SNAPSHOT_DTB := $(SNAPSHOT_DIR)/kernel-rk3588-rock-5b.dtb
-DEVICE_DTB_WARNINGS := dt-warnings.txt
-DEVICE_TREE_IGNORE_WARNINGS ?=0
-
-.PHONY: dt
-.ONESHELL: dt
-dt: kconfig ## Build device tree for kernel	
-	cd $(LINUX_DIR)
-
-    # Create device trees
-	+$(MAKE) -C $(LINUX_DIR) dt_binding_check DTBS=$(DEVICE_DTB)
-	+$(MAKE) -C $(LINUX_DIR) dtbs
-
-	cd $(LINUX_DIR) && \
-		cp -f $(DEVICE_DTB_PATH) $(SNAPSHOT_DTB).prevalidation
-    
-	cd $(LINUX_DIR) && \
-		$(MAKE) -C $(LINUX_DIR) CHECK_DTBS=y $(DEVICE_DTB) 2> $(DEVICE_DTB_WARNINGS) || true
-
-	if [ -s "$(DEVICE_DTB_WARNINGS)" ]; then
-		cat "$(DEVICE_DTB_WARNINGS)" 
-		echo "Warnings in device tree" 
-	fi
-
-	cd $(LINUX_DIR) && \
-		rm -f $(SNAPSHOT_DTB).prevalidation && \
-		cp -rf $(DEVICE_DTB_PATH) $(SNAPSHOT_DTB)
-
-	dtc -I dtb -O dts -o $(SNAPSHOT_DTB) $(SNAPSHOT_DTB).txt > /dev/null 2>&1
 
 # ---------------
 # Kernel Build
@@ -70,7 +31,30 @@ KERNEL_KCONFIG += \
 		-d RELR
 
 .PHONY: kconfig
-kconfig: $(KERNEL_FRAGMENT) ## Generate .config file	
+ # $(KERNEL_FRAGMENT) ## Generate .config file	
+kconfig:
+	echo "test"
+	# Step 1: generate base config
+	+$(MAKE) -C $(LINUX_DIR) ARCH=$(ARCH) KBUILD_CC=$(KBUILD_CC) defconfig
+
+	# Step 2: apply scripted overrides
+	cd $(LINUX_DIR) && $(LINUX_DIR)/scripts/config $(KERNEL_KCONFIG)
+
+	# Step 3: apply fragment (this will override previous settings if there's conflict)
+	cd $(LINUX_DIR) && $(LINUX_DIR)/scripts/kconfig/merge_config.sh \
+		-O $(LINUX_DIR) \
+		-m \
+		.config \
+		$(KERNEL_FRAGMENT)
+
+	# Step 4: finalize
+	+$(MAKE) -C $(LINUX_DIR) ARCH=$(ARCH) olddefconfig
+
+	# Optionally: save
+	-cp -f $(LINUX_DIR)/.config $(SNAPSHOT_DIR)/rk3588-kernel-config
+
+.PHONY: kconfig_old
+kconfig_old: $(KERNEL_FRAGMENT) ## Generate .config file	
 
     # generate .config
 	+$(MAKE) -C $(LINUX_DIR) ARCH=$(ARCH) KBUILD_CC=$(KBUILD_CC) defconfig
@@ -88,13 +72,15 @@ kconfig: $(KERNEL_FRAGMENT) ## Generate .config file
 .PHONY: kernel
 kernel: kconfig ## build linux kernel
 	@echo "Building kernel"
-	+$(MAKE) -C $(LINUX_DIR) KBUILD_IMAGE="arch/arm64/boot/Image"
+	+$(MAKE) -C $(LINUX_DIR) KBUILD_IMAGE="arch/arm64/boot/Image" \
+		LOCALVERSION=$(LOCALVERSION) 
 
 	-cp -rf $(LINUX_DIR)/arch/arm64/boot/Image $(SNAPSHOT_DIR)
 
 .PHONY: devel
 devel: ## Build kernel without re-generating .config first (devel)
-	+$(MAKE) -C $(LINUX_DIR) KBUILD_IMAGE=arch/arm64/boot/Image
+	+$(MAKE) -C $(LINUX_DIR) KBUILD_IMAGE=arch/arm64/boot/Image \
+		LOCALVERSION=$(LOCALVERSION) 
 
 	-cp -rf $(LINUX_DIR)/arch/arm64/boot/Image $(SNAPSHOT_DIR)
 
@@ -110,7 +96,7 @@ KDEB_PKGVERSION ?= $(KERNEL_VERSION)
 
 
 .PHONY: debian
-debian: ## Build kernel and package into .deb archive (requires initial kconfig)
+debian: kconfig ## Build kernel and package into .deb archive (requires initial kconfig)
 	+$(MAKE) -C $(LINUX_DIR) \
 		CROSS_COMPILE=$(CROSS_COMPILE) \
 		KBUILD_IMAGE=arch/arm64/boot/Image \
@@ -133,7 +119,7 @@ menuconfig: ## Launch kernel menuconfig
 		cp -f .config .config.pre-menuconfig
 
 	cd $(LINUX_DIR) && \
-		+$(MAKE) menuconfig
+		$(MAKE) menuconfig
 
 	cd $(LINUX_DIR) && \
 		scripts/diffconfig .config.pre-menuconfig .config 
