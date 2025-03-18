@@ -24,10 +24,7 @@ dtc: $(DTC_DIR)
 kvmtool: dtc
 	cd $(KVMTOOL_DIR) && make ARCH=$(ARCH) LIBFDT_DIR=$(LIBFDT_DIR) \
 		CROSS_COMPILE=$(CROSS_COMPILE) V=1 lkvm-static WERROR=0 -j$(NPROC)
-
-copy-snapshot: kvmtool
-	mkdir -p $(SNAPSHOT_DIR)
-	cp $(KVMTOOL_DIR)/lkvm-static $(SNAPSHOT_DIR)/lkvm	
+	-cp $(KVMTOOL_DIR)/lkvm-static $(SNAPSHOT_DIR)/lkvm	
 
 clean:
 	-cd $(KVMTOOL_DIR) && make clean
