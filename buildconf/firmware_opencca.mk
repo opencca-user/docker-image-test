@@ -2,29 +2,26 @@
 
 include env_aarch64.mk
 
-LOG ?= 10
-DEBUG ?= 0
-ENABLE_OPENCCA_PERF ?= 0
-
-CLEAN_BUILD ?= 0
-
-TFA_BUILD_TYPE := $(if $(filter 1,$(DEBUG)),debug,release)
-RMM_BUILD_TYPE := $(if $(filter 1,$(DEBUG)),Debug,Release)
-
-BL31_ELF ?= $(TFA_DIR)/build/rk3588/$(TFA_BUILD_TYPE)/bl31/bl31.elf
-RMM_ELF ?= $(RMM_DIR)/build/$(RMM_BUILD_TYPE)/rmm.elf
-
-MAKE ?= make -j$(NPROC)
+LOG ?= 10 ## set log level for tfa and rmm
+DEBUG ?= 0 ## set debug mode for tfa and rmm
+ENABLE_OPENCCA_PERF ?= 0 ## enable opencca perf mode
+CLEAN_BUILD ?= 0 ## remove build files before build
 
 .PHONY: all tfa rmm uboot clean
 
-# Default: Build everything
 all: tfa rmm uboot
-build: all
 
-clean: tfa-clean rmm-clean uboot-clean
+build: all ## build firmware stack
+clean: tfa-clean rmm-clean uboot-clean ## clean all
 
-tfa:
+# --------------------------
+# TFA
+# --------------------------
+
+TFA_BUILD_TYPE := $(if $(filter 1,$(DEBUG)),debug,release)
+BL31_ELF ?= $(TFA_DIR)/build/rk3588/$(TFA_BUILD_TYPE)/bl31/bl31.elf
+
+tfa: ## build tfa
 	@echo "Building TFA..."
 
 	@if [ "$(CLEAN_BUILD)" = "1" ]; then \
@@ -46,16 +43,22 @@ tfa:
 	
 	cp -rf $(BL31_ELF) $(SNAPSHOT_DIR)
 
-tfa-clean:
+tfa-clean: ## clean tfa
 	-rm -r $(TFA_DIR)/build
 
+# --------------------------
+# RMM
+# --------------------------
 
+RMM_ELF ?= $(RMM_DIR)/build/$(RMM_BUILD_TYPE)/rmm.elf
+RMM_BUILD_TYPE := $(if $(filter 1,$(DEBUG)),Debug,Release)
 RMM_CLEAN_FLAGS :=
+
 ifeq ($(CLEAN_BUILD),1)
     RMM_CLEAN_FLAGS += --clean-first
 endif
 
-rmm: 
+rmm: ## build rmm
 	@echo "Building RMM..."
 
 	@if [ "$(CLEAN_BUILD)" = "1" ]; then \
@@ -75,14 +78,19 @@ rmm:
 
 	cp -rf $(RMM_ELF) $(SNAPSHOT_DIR)/tf-rmm.elf || true
 
-rmm-clean:
+rmm-clean: ## clean rmm
 	-rm -r $(RMM_DIR)/build	
 
+# --------------------------
+# U-Boot
+# --------------------------
+
+UBOOT_ROCKCHIP_TPL := $(ASSETS_DIR)/rk3588/rk3588_ddr_lp4_2112MHz_lp5_2736MHz_v1.08.bin
 UBOOT_CONFIG := $(UBOOT_DIR)/.config
 UBOOT_FRAGMENT := $(UBOOT_DIR)/rk3588_fragment.config
 UBOOT_BIN := idbloader.img u-boot.itb u-boot-rockchip.bin u-boot-rockchip-spi.bin u-boot
 
-uboot:
+uboot: ## uboot build
 	@echo "Building U-Boot..."
 
 	# debug
@@ -95,23 +103,29 @@ uboot:
 
 	cd $(UBOOT_DIR) && \
 	$(MAKE) -j$(NPROC) \
-		ARCH=$(ARCH) \
 		CROSS_COMPILE=$(CROSS_COMPILE) \
-		ROCKCHIP_TPL=$(SNAPSHOT_DIR)/rk3588_ddr_lp4_2112MHz_lp5_2736MHz_v1.08.bin \
+		ROCKCHIP_TPL=$(UBOOT_ROCKCHIP_TPL) \
 		BL31=$(SNAPSHOT_DIR)/bl31.elf \
 		RMM=$(SNAPSHOT_DIR)/tf-rmm.elf 
 	
-	-cp -rf $(UBOOT_DIR)arch/arm/dts/rk3588-rock-5b.dtb \
+	-cp -rf $(UBOOT_DIR)/arch/arm/dts/rk3588-rock-5b.dtb \
 		$(SNAPSHOT_DIR)/uboot-rk3588-rock-5b.dtb
 
 	-dtc -I dtb -O dts -o $(SNAPSHOT_DIR)/uboot-rk3588-rock-5b.dts \
-		$(SNAPSHOT_DIR)/uboot-rk3588-rock-5b.dtb &> /dev/null
+		$(SNAPSHOT_DIR)/uboot-rk3588-rock-5b.dtb > /dev/null 2>&1 &
 
 	cd $(UBOOT_DIR) && cp -rf $(UBOOT_BIN) $(SNAPSHOT_DIR)
 
-uboot-clean:
+uboot-clean: ## clean uboot
 	cd $(UBOOT_DIR) && $(MAKE) distclean
 
+uboot-menuconfig:  ## run menuconfig for uboot
+	cd $(UBOOT_DIR) && \
+		scripts/kconfig/merge_config.sh -r $(UBOOT_CONFIG) $(UBOOT_FRAGMENT)
+
+	$(MAKE) menuconfig
+
+	diff -uw .config.old .config
 
 
 
