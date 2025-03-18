@@ -26,7 +26,7 @@ RUN apt install -y usbutils udev libusb-1.0-0-dev coreutils expect
 
 RUN ln -s /usr/bin/python3 /usr/bin/python || true
 
-# build uboot
+# build tools for uboot
 RUN apt-get install -y bc bison build-essential coccinelle \
   device-tree-compiler dfu-util efitools flex gdisk graphviz imagemagick \
   liblz4-tool libgnutls28-dev libguestfs-tools libncurses-dev \
@@ -36,6 +36,10 @@ RUN apt-get install -y bc bison build-essential coccinelle \
   python3-pytest python3-pytest-xdist python3-sphinxcontrib.apidoc \
   python3-sphinx-rtd-theme python3-subunit python3-testtools \
   python3-virtualenv swig uuid-dev
+
+# build tools for linux
+RUN pip3 install --no-cache-dir dtschema --break-system-packages
+ENV PATH="/root/.local/bin:$PATH"
 
 # Install Toolchain
 COPY --from=toolchain /build/ /build/
