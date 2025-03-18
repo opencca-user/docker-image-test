@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  opencca-build:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    image: opencca-build:latest
+    container_name: opencca-build
+    hostname: opencca-build
+    privileged: true
+    network_mode: "host"
+    extra_hosts:
+      - "opencca-build:127.0.0.1"
+    volumes:
+      - ../../:/opencca # project root
+      - ~/.ccache:/root/.ccache  # Mount ccache directory
+      - .bash_history:/root/.bash_history  # Persist Bash history
+      - .fish_history:/root/.local/share/fish/fish_history  # Persist Fish history
+      - .cache/:/root/.cache
+
+    environment:
+      - CCACHE_DIR=/root/.ccache
+
+    working_dir: /opencca/
+    stdin_open: true
+    tty: true    
