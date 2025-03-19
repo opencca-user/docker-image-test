@@ -17,7 +17,7 @@ ENV HOME=/root
 
 RUN apt update -y 
 RUN apt install -y build-essential autoconf automake libtool ccache device-tree-compiler
-RUN apt install -y emacs-nox nano vim sudo curl wget git \
+RUN apt install -y emacs-nox nano vim sudo curl wget git repo \
     unzip htop tmux screen bash-completion lsof fish tmux bash \
     iproute2 net-tools dnsutils iputils-ping traceroute socat tcpdump nmap \
     build-essential cmake pkg-config gdb gdb-multiarch strace  \
@@ -77,6 +77,10 @@ RUN go install -v github.com/go-debos/debos/cmd/debos@latest
 RUN /build/gocode/bin/debos --help
 
 ENV PATH="/build/gocode/bin:$PATH"
+
+# Install Repo tool
+RUN curl -o /usr/local/bin/repo https://storage.googleapis.com/git-repo-downloads/repo && \
+    chmod a+x /usr/local/bin/repo
 
 RUN  git config --global --add safe.directory "*"
 
