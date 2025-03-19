@@ -36,6 +36,23 @@ dt: ## Build device tree for kernel
 	
 	dtc -I dtb -O dts -o $(SNAPSHOT_DIR)/kernel-rk3588-rock-5b.dts $(SNAPSHOT_DIR)/kernel-rk3588-rock-5b.dtb > /dev/null 2>&1 &
 
+KERNEL_KCONFIG := \
+		scripts/config -e WLAN && \
+		scripts/config -e WLAN_VENDOR_BROADCOM \
+		scripts/config -m BRCMUTIL \
+		scripts/config -m BRCMFMAC \
+		scripts/config -e BRCMFMAC_PROTO_BCDC \
+		scripts/config -e BRCMFMAC_PROTO_MSGBUF \
+		scripts/config -e BRCMFMAC_USB \
+		scripts/config -e WLAN_VENDOR_REALTEK \
+		scripts/config -m RTW89 \
+		scripts/config -m RTW89_CORE \
+		scripts/config -m RTW89_PCI \
+		scripts/config -m RTW89_8825B \
+		scripts/config -m RTW89_8852BE \
+		scripts/config -m BINFMT_MISC \
+		scripts/config -d RELR 
+
 kernel: ## build linux kernel from scratch
 	@echo "Building Kernel..."
 
@@ -43,58 +60,71 @@ kernel: ## build linux kernel from scratch
 		$(MAKE) ARCH=$(ARCH) KBUILD_CC=$(KBUILD_CC) CC="$(CC)" defconfig
 
 	cd $(LINUX_DIR) && \
-		scripts/config -e WLAN -e WLAN_VENDOR_BROADCOM -m BRCMUTIL -m BRCMFMAC \
-		-e BRCMFMAC_PROTO_BCDC -e BRCMFMAC_PROTO_MSGBUF -e BRCMFMAC_USB \
-		-e WLAN_VENDOR_REALTEK -m RTW89 -m RTW89_CORE -m RTW89_PCI \
-		-m RTW89_8825B -m RTW89_8852BE -m BINFMT_MISC \
-		-d RELR 
+		$(KERNEL_KCONFIG)
 
 	cd $(LINUX_DIR) && \
 		scripts/kconfig/merge_config.sh .config rk3588_fragment.config
 
 	cd $(LINUX_DIR) && \
-		$(MAKE) KBUILD_IMAGE=arch/arm64/boot/Image CC="$(CC)"
+		$(MAKE) KBUILD_IMAGE=arch/arm64/boot/Image"
 
-	cp -rf $(LINUX_DIR)/arch/arm64/boot/Image $(SNAPSHOT_DIR)
-	cp -rf $(LINUX_DIR)/vmlinux $(SNAPSHOT_DIR)/vmlinux-host
-	cp -rf $(LINUX_DIR)/.config $(SNAPSHOT_DIR)/kernel.config
+	-cp -rf $(LINUX_DIR)/arch/arm64/boot/Image $(SNAPSHOT_DIR)
+	-cp -rf $(LINUX_DIR)/vmlinux $(SNAPSHOT_DIR)/vmlinux-host
+	-cp -rf $(LINUX_DIR)/.config $(SNAPSHOT_DIR)/kernel.config
 
-# devel:
-# 	@echo "Building Development Kernel..."
-# 	$(MAKE) -C $(LINUX_DIR) -j$(NPROC) KBUILD_IMAGE=arch/arm64/boot/Image
-# 	cp -rf $(LINUX_DIR)/arch/arm64/boot/Image $(SNAPSHOT_DIR)
-# 	cp -rf $(LINUX_DIR)/vmlinux $(SNAPSHOT_DIR)/vmlinux-host
-# 	cp -rf $(LINUX_DIR)/.config $(SNAPSHOT_DIR)/kernel.config
+devel: ## Build kernel without re-generating .config first
+	@echo "Building Development Kernel..."
 
-# modules:
-# 	@echo "Building Kernel Modules..."
-# 	mkdir -p $(SNAPSHOT_DIR)/modules
-# 	$(MAKE) -C $(LINUX_DIR) -j$(NPROC) modules
-# 	$(MAKE) -C $(LINUX_DIR) -j$(NPROC) INSTALL_MOD_PATH=$(SNAPSHOT_DIR)/modules modules_install
-# 	cp -rf $(LINUX_DIR)/arch/arm64/boot/Image $(SNAPSHOT_DIR)
-# 	cp -rf $(LINUX_DIR)/.config $(SNAPSHOT_DIR)/kernel.config
+	cd $(LINUX_DIR) && \
+		$(MAKE) ARCH=$(ARCH) KBUILD_CC=$(KBUILD_CC) CC="$(CC)" defconfig
 
-# deb:
-# 	@echo "Building Kernel Debian Package..."
-# 	export CROSS_COMPILE="aarch64-none-elf-"
-# 	$(MAKE) -C $(LINUX_DIR) defconfig
-# 	$(LINUX_DIR)/scripts/config -e WLAN -e WLAN_VENDOR_BROADCOM -m BRCMUTIL -m BRCMFMAC \
-# 		-e BRCMFMAC_PROTO_BCDC -e BRCMFMAC_PROTO_MSGBUF -e BRCMFMAC_USB \
-# 		-e WLAN_VENDOR_REALTEK -m RTW89 -m RTW89_CORE -m RTW89_PCI \
-# 		-m RTW89_8825B -m RTW89_8852BE -m BINFMT_MISC -d RELR
-# 	$(LINUX_DIR)/scripts/kconfig/merge_config.sh .config rk3588_fragment.config
-# 	$(MAKE) -C $(LINUX_DIR) -j$(NPROC) CROSS_COMPILE=$(CROSS_COMPILE) KBUILD_IMAGE=arch/arm64/boot/Image ARCH=arm64 deb-pkg
-# 	cp -rf $(LINUX_DIR)/arch/arm64/boot/Image $(SNAPSHOT_DIR)
-# 	cp -rf $(LINUX_DIR)/vmlinux $(SNAPSHOT_DIR)/vmlinux-host
-# 	cp -rf $(LINUX_DIR)/.config $(SNAPSHOT_DIR)/kernel.config
+	cd $(LINUX_DIR) && \
+		$(KERNEL_KCONFIG)
+	
+	cd $(LINUX_DIR) && \
+	$(MAKE) KBUILD_IMAGE=arch/arm64/boot/Image
 
-# menuconfig:
-# 	@echo "Launching Kernel Menuconfig..."
-# 	$(MAKE) -C $(LINUX_DIR) menuconfig
-# 	$(LINUX_DIR)/scripts/diffconfig .config.old .config
+	-cp -rf $(LINUX_DIR)/arch/arm64/boot/Image $(SNAPSHOT_DIR)
+	-cp -rf $(LINUX_DIR)/vmlinux $(SNAPSHOT_DIR)/vmlinux-host
+	-cp -rf $(LINUX_DIR)/.config $(SNAPSHOT_DIR)/kernel.config
 
-# clean:
-# 	@echo "Cleaning Kernel Build..."
-# 	$(MAKE) -C $(LINUX_DIR) clean
-# 	$(MAKE) -C $(LINUX_DIR) mrproper
-# 	rm -rf $(SNAPSHOT_DIR)/*
+modules: ## Build kernel moddules
+	@echo "Building Kernel Modules..."
+
+	cd $(LINUX_DIR) && $(MAKE) modules
+
+	cd $(LINUX_DIR) && \
+		$(MAKE) modules
+
+	# $(MAKE) -C $(LINUX_DIR) -j$(NPROC) INSTALL_MOD_PATH=$(SNAPSHOT_DIR)/modules modules_install
+
+
+deb: kernel ## Build kernel and package into .deb archive
+	cd $(LINUX_DIR) && \
+		$(MAKE) ARCH=$(ARCH) KBUILD_CC=$(KBUILD_CC) CC="$(CC)" defconfig
+
+	cd $(LINUX_DIR) && \
+		$(KERNEL_KCONFIG)
+
+	cd $(LINUX_DIR) && \
+		scripts/kconfig/merge_config.sh .config rk3588_fragment.config
+
+	cd $(LINUX_DIR) && \
+		$(MAKE) CROSS_COMPILE=$(CROSS_COMPILE) \
+		KBUILD_IMAGE=arch/arm64/boot/Image \
+		ARCH=$(ARCH) \
+		deb-pkg
+	
+	# TODO: put deb somewhere
+	# what about version?
+
+menuconfig: ## Launch kernel menuconfig
+	cd $(LINUX_DIR) && \
+		$(MAKE) menuconfig
+
+	cd $(LINUX_DIR) && \
+		scripts/diffconfig .config.old .config
+
+clean: ## Clean kernel build
+	$(MAKE) -C $(LINUX_DIR) clean
+	$(MAKE) -C $(LINUX_DIR) mrproper
