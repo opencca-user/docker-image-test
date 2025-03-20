@@ -8,7 +8,7 @@ EXIT_ON_DEVICE_TREE_VALIDATION := 0
 
 .PHONY: build dt kernel devel modules deb menuconfig clean
 
-build: dt kernel
+build: kernel ## see kernel
 
 dt: ## Build device tree for kernel
 	@echo "Building Device Tree..."
@@ -38,22 +38,22 @@ dt: ## Build device tree for kernel
 
 KERNEL_KCONFIG := \
 		scripts/config -e WLAN && \
-		scripts/config -e WLAN_VENDOR_BROADCOM \
-		scripts/config -m BRCMUTIL \
-		scripts/config -m BRCMFMAC \
-		scripts/config -e BRCMFMAC_PROTO_BCDC \
-		scripts/config -e BRCMFMAC_PROTO_MSGBUF \
-		scripts/config -e BRCMFMAC_USB \
-		scripts/config -e WLAN_VENDOR_REALTEK \
-		scripts/config -m RTW89 \
-		scripts/config -m RTW89_CORE \
-		scripts/config -m RTW89_PCI \
-		scripts/config -m RTW89_8825B \
-		scripts/config -m RTW89_8852BE \
-		scripts/config -m BINFMT_MISC \
-		scripts/config -d RELR 
+		scripts/config -e WLAN_VENDOR_BROADCOM && \
+		scripts/config -m BRCMUTIL && \
+		scripts/config -m BRCMFMAC && \
+		scripts/config -e BRCMFMAC_PROTO_BCDC && \
+		scripts/config -e BRCMFMAC_PROTO_MSGBUF && \
+		scripts/config -e BRCMFMAC_USB && \
+		scripts/config -e WLAN_VENDOR_REALTEK && \
+		scripts/config -m RTW89 && \
+		scripts/config -m RTW89_CORE && \
+		scripts/config -m RTW89_PCI && \
+		scripts/config -m RTW89_8825B && \
+		scripts/config -m RTW89_8852BE && \
+		scripts/config -m BINFMT_MISC && \
+		scripts/config -d RELR
 
-kernel: ## build linux kernel from scratch
+kernel: dt ## build linux kernel and device tree from scratch
 	@echo "Building Kernel..."
 
 	cd $(LINUX_DIR) && \
@@ -66,13 +66,13 @@ kernel: ## build linux kernel from scratch
 		scripts/kconfig/merge_config.sh .config rk3588_fragment.config
 
 	cd $(LINUX_DIR) && \
-		$(MAKE) KBUILD_IMAGE=arch/arm64/boot/Image"
+		$(MAKE) KBUILD_IMAGE="arch/arm64/boot/Image"
 
 	-cp -rf $(LINUX_DIR)/arch/arm64/boot/Image $(SNAPSHOT_DIR)
 	-cp -rf $(LINUX_DIR)/vmlinux $(SNAPSHOT_DIR)/vmlinux-host
 	-cp -rf $(LINUX_DIR)/.config $(SNAPSHOT_DIR)/kernel.config
 
-devel: ## Build kernel without re-generating .config first
+devel: ## Build kernel without re-generating .config first (devel)
 	@echo "Building Development Kernel..."
 
 	cd $(LINUX_DIR) && \
@@ -98,10 +98,9 @@ modules: ## Build kernel moddules
 
 	# $(MAKE) -C $(LINUX_DIR) -j$(NPROC) INSTALL_MOD_PATH=$(SNAPSHOT_DIR)/modules modules_install
 
-
-deb: kernel ## Build kernel and package into .deb archive
+deb: dt ## Build kernel and package into .deb archive
 	cd $(LINUX_DIR) && \
-		$(MAKE) ARCH=$(ARCH) KBUILD_CC=$(KBUILD_CC) CC="$(CC)" defconfig
+		$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) defconfig
 
 	cd $(LINUX_DIR) && \
 		$(KERNEL_KCONFIG)
@@ -113,6 +112,8 @@ deb: kernel ## Build kernel and package into .deb archive
 		$(MAKE) CROSS_COMPILE=$(CROSS_COMPILE) \
 		KBUILD_IMAGE=arch/arm64/boot/Image \
 		ARCH=$(ARCH) \
+		LOCALVERSION=$(LOCALVERSION) \
+		KDEB_PKGVERSION=$(KDEB_PKGVERSION) \
 		deb-pkg
 	
 	# TODO: put deb somewhere

@@ -49,6 +49,16 @@ ENV PATH="/build/aarch64-none-elf/bin:/build/aarch64-none-linux-gnu/bin:$PATH"
 ENV CCACHE_DIR="/build/.ccache"
 RUN ccache --max-size=10G
 
+# buildroot
+ENV FORCE_UNSAFE_CONFIGURE=1
+RUN apt install -y rsync build-essential git wget \
+    bc bison flex python3 rsync file unzip cpio \
+    sudo gawk texinfo libncurses-dev libssl-dev automake \
+    autoconf bzip2 xz-utils patch curl pkg-config \
+    cmake ninja-build device-tree-compiler libelf-dev \
+    qemu-system qemu-user qemu-user-static dosfstools mtools \
+    genext2fs fakeroot libtool g++ zlib1g-dev gperf meso
+
 # Install Debos
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -67,7 +77,9 @@ RUN apt-get update && \
     systemd \
     dbus \
     systemd systemd-resolved \
-    mmdebstrap
+    mmdebstrap \
+    pigz
+
     
 RUN apt install -y golang git libglib2.0-dev libostree-dev qemu-system-x86 \
     qemu-user-static debootstrap systemd-container 
@@ -81,6 +93,10 @@ ENV PATH="/build/gocode/bin:$PATH"
 # Install Repo tool
 RUN curl -o /usr/local/bin/repo https://storage.googleapis.com/git-repo-downloads/repo && \
     chmod a+x /usr/local/bin/repo
+
+# Linux 
+RUN apt-get install -y debhelper-compat libelf-dev gcc-aarch64-linux-gnu
+
 
 RUN  git config --global --add safe.directory "*"
 

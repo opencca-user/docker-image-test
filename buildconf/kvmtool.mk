@@ -11,8 +11,7 @@ DTC_DIR= $(KVMTOOL_DIR)/dtc
 LIBFDT_DIR=$(DTC_DIR)/libfdt
 
 .PHONY: all clean dtc kvmtool copy-snapshot
-
-all: dtc kvmtool
+all: build
 
 $(DTC_DIR):
 	@echo "cloning dtc into $$(DTC_DIR)"
@@ -21,7 +20,7 @@ $(DTC_DIR):
 dtc: $(DTC_DIR)
 	cd $(DTC_DIR) && make libfdt -j$(NPROC)
 
-kvmtool: dtc ## build kvm tool
+build: dtc ## build kvm tool
 	cd $(KVMTOOL_DIR) && make ARCH=$(ARCH) LIBFDT_DIR=$(LIBFDT_DIR) \
 		CROSS_COMPILE=$(CROSS_COMPILE) V=1 lkvm-static WERROR=0 -j$(NPROC)
 	-cp $(KVMTOOL_DIR)/lkvm-static $(SNAPSHOT_DIR)/lkvm	

@@ -9,6 +9,9 @@ DTC_DIR ?= $(ROOT_DIR)/dtc
 UBOOT_DIR ?= $(ROOT_DIR)/u-boot
 RKBIN_DIR ?= $(ROOT_DIR)/rkbin
 ASSETS_DIR ?= $(ROOT_DIR)/opencca-assets
+
+BUILDROOT_DIR ?= $(ROOT_DIR)/buildroot
+
 export SNAPSHOT_DIR ?= $(ROOT_DIR)/snapshot
 
 DEBOS_DIR ?= $(ROOT_DIR)/debian-image-recipes
@@ -17,10 +20,6 @@ NPROC ?= $(shell nproc)
 MAKEFLAGS += -j$(NPROC)
 MAKE += $(MAKEFLAGS)
 
-
-# Export all Makefile variables for bash
-print-vars:  
-	@awk -F ' \\?= | = ' '/^[A-Z0-9_-]+( \\?= | = )/ {print "export " $$1 "=" $$2}' $(MAKEFILE_LIST)
 
 help: ## Print this help message
 	@echo "Available make targets for $(firstword $(MAKEFILE_LIST)):"
@@ -34,3 +33,9 @@ help: ## Print this help message
 	@awk 'BEGIN {FS = " \\?= |##"} /^[A-Z0-9_-]+ \?= / \
 		{printf "  \033[33m%-25s\033[0m %-5s \033[32m%s\033[0m \n", $$1, $$2, $$3}' $(MAKEFILE_LIST)
 
+
+
+
+# # Export all Makefile variables for bash
+# print-vars:  
+# 	@awk -F ' \\?= | = ' '/^[A-Z0-9_-]+( \\?= | = )/ {print "export " $$1 "=" $$2}' $(MAKEFILE_LIST)
