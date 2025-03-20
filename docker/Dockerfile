@@ -21,7 +21,8 @@ RUN apt install -y emacs-nox nano vim sudo curl wget git repo \
     unzip htop tmux screen bash-completion lsof fish tmux bash \
     iproute2 net-tools dnsutils iputils-ping traceroute socat tcpdump nmap \
     build-essential cmake pkg-config gdb gdb-multiarch strace  \
-    python3 python3-pip python3-venv python3-dev
+    python3 python3-pip python3-venv python3-dev \
+    telnet xterm net-tools sshpass
 RUN apt install -y usbutils udev libusb-1.0-0-dev coreutils expect
 
 RUN ln -s /usr/bin/python3 /usr/bin/python || true

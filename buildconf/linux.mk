@@ -1,130 +1,128 @@
 #!/usr/bin/make -f
 include env_aarch64.mk
 
-export KDEB_PKGVERSION ?= 6.12.0 ## kernel deb package version
-export LOCALVERSION ?= -opencca-wip ## kernel version suffix
+.ONESHELL:
+SHELL := /bin/bash
 
-EXIT_ON_DEVICE_TREE_VALIDATION := 0
-
-.PHONY: build dt kernel devel modules deb menuconfig clean
+LOCALVERSION ?= -opencca-wip ## kernel version suffix
 
 build: kernel ## see kernel
 
-dt: ## Build device tree for kernel
-	@echo "Building Device Tree..."
-	cd $(LINUX_DIR) && \
-		$(MAKE) defconfig && \
-		$(MAKE) dt_binding_check && \
-		$(MAKE) dtbs
+# ---------------
+# Device tree
+# ---------------
 
-	cp -rf $(LINUX_DIR)/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dtb $(SNAPSHOT_DIR)/kernel-rk3588-rock-5b.dtb.prevalidation
+DEVICE_DTB := rockchip/rk3588-rock-5b.dtb
+DEVICE_DTB_PATH := arch/arm64/boot/dts/$(DEVICE_DTB)
+SNAPSHOT_DTB := $(SNAPSHOT_DIR)/kernel-rk3588-rock-5b.dtb
+DEVICE_DTB_WARNINGS := dt-warnings.txt
+
+dt: kconfig ## Build device tree for kernel	
+	cd $(LINUX_DIR) 
 	
-	cd $(LINUX_DIR) && \
-	$(MAKE) CHECK_DTBS=y rockchip/rk3588-rock-5b.dtb 2> dt-warnings.txt || true
+	# Create device trees
+	$(MAKE) -C $(LINUX_DIR) dt_binding_check
+	$(MAKE) -C $(LINUX_DIR) dtbs
+	-cp -f $(DEVICE_DTB_PATH) $(SNAPSHOT_DTB).prevalidation
+    
+	$(MAKE) -C $(LINUX_DIR) CHECK_DTBS=y \
+		$(DEVICE_DTB) 2> $(DEVICE_DTB_WARNINGS) || true
 
-	@if [ -s dt-warnings.txt ]; then \
-		cat dt-warnings.txt; \
-		@echo "====================================================="; \
-		@echo "Device tree validation failed. Please fix the warnings."; \
-		@echo "====================================================="; \
-		if [ "$(EXIT_ON_DEVICE_TREE_VALIDATION)" = "1" ]; then exit 42; fi \
+	# Check for warnings
+	if [ -s "$(DEVICE_DTB_WARNINGS)" ]; then
+		cat "$(DEVICE_DTB_WARNINGS)"
+		echo "Warnings in device tree"
 	fi
 
-	-rm $(SNAPSHOT_DIR)/kernel-rk3588-rock-5b.dtb.prevalidation
+	-rm -f $(SNAPSHOT_DTB).prevalidation
+	-cp -rf $(DEVICE_DTB_PATH) $(SNAPSHOT_DTB)
+	dtc -I dtb -O dts -o $(SNAPSHOT_DTB) $(SNAPSHOT_DTB).txt > /dev/null 2>&1 &
 
-	-cp -rf $(LINUX_DIR)/arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dtb $(SNAPSHOT_DIR)/kernel-rk3588-rock-5b.dtb
-	
-	dtc -I dtb -O dts -o $(SNAPSHOT_DIR)/kernel-rk3588-rock-5b.dts $(SNAPSHOT_DIR)/kernel-rk3588-rock-5b.dtb > /dev/null 2>&1 &
+# ---------------
+# Kernel Build
+# ---------------
 
-KERNEL_KCONFIG := \
-		scripts/config -e WLAN && \
-		scripts/config -e WLAN_VENDOR_BROADCOM && \
-		scripts/config -m BRCMUTIL && \
-		scripts/config -m BRCMFMAC && \
-		scripts/config -e BRCMFMAC_PROTO_BCDC && \
-		scripts/config -e BRCMFMAC_PROTO_MSGBUF && \
-		scripts/config -e BRCMFMAC_USB && \
-		scripts/config -e WLAN_VENDOR_REALTEK && \
-		scripts/config -m RTW89 && \
-		scripts/config -m RTW89_CORE && \
-		scripts/config -m RTW89_PCI && \
-		scripts/config -m RTW89_8825B && \
-		scripts/config -m RTW89_8852BE && \
-		scripts/config -m BINFMT_MISC && \
-		scripts/config -d RELR
+KERNEL_CONFIG := $(LINUX_DIR)/.config
+KERNEL_FRAGMENT := $(LINUX_DIR)/rk3588_fragment.config ## kconfig fragment
+KERNEL_KCONFIG += \
+		-e WLAN \
+		-e WLAN_VENDOR_BROADCOM \
+		-m BRCMUTIL \
+		-m BRCMFMAC \
+		-e BRCMFMAC_PROTO_BCDC \
+		-e BRCMFMAC_PROTO_MSGBUF \
+		-e BRCMFMAC_USB \
+		-e WLAN_VENDOR_REALTEK \
+		-m RTW89 \
+		-m RTW89_CORE \
+		-m RTW89_PCI \
+		-m RTW89_8825B \
+		-m RTW89_8852BE \
+		-m BINFMT_MISC \
+		-d RELR
 
-kernel: dt ## build linux kernel and device tree from scratch
-	@echo "Building Kernel..."
+kconfig: $(KERNEL_FRAGMENT) ## Generate .config file	
+	# generate .config
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(ARCH) KBUILD_CC=$(KBUILD_CC) defconfig
 
-	cd $(LINUX_DIR) && \
-		$(MAKE) ARCH=$(ARCH) KBUILD_CC=$(KBUILD_CC) CC="$(CC)" defconfig
+	# apply rk3588 settings
+	cd $(LINUX_DIR) && $(LINUX_DIR)/scripts/config $(KERNEL_KCONFIG)
 
-	cd $(LINUX_DIR) && \
-		$(KERNEL_KCONFIG)
+	# apply fragment
+	cd $(LINUX_DIR) && $(LINUX_DIR)/scripts/kconfig/merge_config.sh \
+		$(KERNEL_CONFIG) \
+		$(KERNEL_FRAGMENT)
 
-	cd $(LINUX_DIR) && \
-		scripts/kconfig/merge_config.sh .config rk3588_fragment.config
+	-cp -rf $(LINUX_DIR)/.config $(SNAPSHOT_DIR)/rk3588-kernel-config
 
-	cd $(LINUX_DIR) && \
-		$(MAKE) KBUILD_IMAGE="arch/arm64/boot/Image"
+kernel: kconfig ## build linux kernel
+	@echo "Building kernel"
+	$(MAKE) -C $(LINUX_DIR) KBUILD_IMAGE="arch/arm64/boot/Image"
 
 	-cp -rf $(LINUX_DIR)/arch/arm64/boot/Image $(SNAPSHOT_DIR)
-	-cp -rf $(LINUX_DIR)/vmlinux $(SNAPSHOT_DIR)/vmlinux-host
-	-cp -rf $(LINUX_DIR)/.config $(SNAPSHOT_DIR)/kernel.config
 
 devel: ## Build kernel without re-generating .config first (devel)
-	@echo "Building Development Kernel..."
-
-	cd $(LINUX_DIR) && \
-		$(MAKE) ARCH=$(ARCH) KBUILD_CC=$(KBUILD_CC) CC="$(CC)" defconfig
-
-	cd $(LINUX_DIR) && \
-		$(KERNEL_KCONFIG)
-	
-	cd $(LINUX_DIR) && \
-	$(MAKE) KBUILD_IMAGE=arch/arm64/boot/Image
+	$(MAKE) -C $(LINUX_DIR) KBUILD_IMAGE=arch/arm64/boot/Image
 
 	-cp -rf $(LINUX_DIR)/arch/arm64/boot/Image $(SNAPSHOT_DIR)
-	-cp -rf $(LINUX_DIR)/vmlinux $(SNAPSHOT_DIR)/vmlinux-host
-	-cp -rf $(LINUX_DIR)/.config $(SNAPSHOT_DIR)/kernel.config
 
-modules: ## Build kernel moddules
-	@echo "Building Kernel Modules..."
 
-	cd $(LINUX_DIR) && $(MAKE) modules
+# ---------------
+# Debian package
+# ---------------
 
-	cd $(LINUX_DIR) && \
-		$(MAKE) modules
+BUILD_TIMESTAMP := $(shell date +%Y-%m-%d_%H-%M-%S)
+RELEASE_DIR = $(LINUX_DIR)/../linux-release/$(BUILD_TIMESTAMP)_$(KERNEL_VERSION)
+KERNEL_VERSION = $(shell make -sC $(LINUX_DIR) kernelversion)$(LOCALVERSION)
+KDEB_PKGVERSION ?= $(KERNEL_VERSION)
 
-	# $(MAKE) -C $(LINUX_DIR) -j$(NPROC) INSTALL_MOD_PATH=$(SNAPSHOT_DIR)/modules modules_install
-
-deb: dt ## Build kernel and package into .deb archive
-	cd $(LINUX_DIR) && \
-		$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) defconfig
-
-	cd $(LINUX_DIR) && \
-		$(KERNEL_KCONFIG)
-
-	cd $(LINUX_DIR) && \
-		scripts/kconfig/merge_config.sh .config rk3588_fragment.config
-
-	cd $(LINUX_DIR) && \
-		$(MAKE) CROSS_COMPILE=$(CROSS_COMPILE) \
+debian: ## Build kernel and package into .deb archive (requires initial kconfig)
+	$(MAKE) -C $(LINUX_DIR) \
+		CROSS_COMPILE=$(CROSS_COMPILE) \
 		KBUILD_IMAGE=arch/arm64/boot/Image \
 		ARCH=$(ARCH) \
 		LOCALVERSION=$(LOCALVERSION) \
 		KDEB_PKGVERSION=$(KDEB_PKGVERSION) \
 		deb-pkg
-	
-	# TODO: put deb somewhere
-	# what about version?
+
+	# XXX: deb-pkg creates *.deb files in parent
+	# directory of linux dir. We move these to their own folder.
+	mkdir -p $(RELEASE_DIR)
+	mv $(LINUX_DIR)/../linux-upstream* $(RELEASE_DIR)
+	mv $(LINUX_DIR)/../linux-*.deb $(RELEASE_DIR)
+	@echo "Files moved to $(RELEASE_DIR)"
+	ls -al $(RELEASE_DIR)/
+
 
 menuconfig: ## Launch kernel menuconfig
+	cd $(LINUX_DIR) && \
+		cp -f .config .config.pre-menuconfig
+
 	cd $(LINUX_DIR) && \
 		$(MAKE) menuconfig
 
 	cd $(LINUX_DIR) && \
-		scripts/diffconfig .config.old .config
+		scripts/diffconfig .config.pre-menuconfig .config 
 
 clean: ## Clean kernel build
 	$(MAKE) -C $(LINUX_DIR) clean

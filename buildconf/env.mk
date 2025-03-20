@@ -29,10 +29,17 @@ help: ## Print this help message
 		{printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	
 	@echo ""
-	@echo "Available variables for $(firstword $(MAKEFILE_LIST)):"
-	@awk 'BEGIN {FS = " \\?= |##"} /^[A-Z0-9_-]+ \?= / \
-		{printf "  \033[33m%-25s\033[0m %-5s \033[32m%s\033[0m \n", $$1, $$2, $$3}' $(MAKEFILE_LIST)
+	@echo "Available make variables for $(firstword $(MAKEFILE_LIST))"
+	@# Print all variables with ## in help text
+	@awk 'BEGIN {FS = "(:=|\\+=|\\?=|=)|##"} /^[A-Z0-9_-]+[[:space:]]*(:=|\?=||\+=|=).*##/ \
+		{printf "  \033[33m%-25s\033[0m %-3s \033[32m%s\033[0m \n", $$1, $$2, $$3}' $(MAKEFILE_LIST)
 
+	@echo ""
+	@# Print all variables without ## in help text
+	@awk 'BEGIN {FS = "(:=|\\+=|\\?=|=)"} /^[A-Z0-9_-]+[[:space:]]*(:=|\?=|\+=|=)/ && !/##/ \
+		{printf "  \033[33m%-25s\033[0m %-3s \033[32m%s\033[0m \n", $$1, $$2, $$3}' $(MAKEFILE_LIST)
+
+		
 
 
 
