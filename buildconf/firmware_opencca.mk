@@ -7,12 +7,17 @@ DEBUG ?= 0 ## set debug mode for tfa and rmm
 ENABLE_OPENCCA_PERF ?= 0 ## enable opencca perf mode
 CLEAN_BUILD ?= 0 ## remove build files before build
 
-.PHONY: all tfa rmm uboot clean
+$(info using LOG=$(LOG))
+$(info using DEBUG=$(DEBUG))
+$(info using ENABLE_OPENCCA_PERF=$(ENABLE_OPENCCA_PERF))
 
-all: tfa rmm uboot
+.PHONY: all tfa rmm uboot clean build
 
-build: all ## build firmware stack
-clean: tfa-clean rmm-clean uboot-clean ## clean all
+all: build
+
+.PHONY: build
+build: rmm tfa ## build firmware stack
+	+$(MAKE) -f $(firstword $(MAKEFILE_LIST)) uboot
 
 # --------------------------
 # TFA
@@ -66,8 +71,11 @@ rmm: ## build rmm
 		rm -rf $(RMM_DIR)/build; \
 	fi
 
+	mkdir -p $(RMM_DIR)/build
+
 	cd $(RMM_DIR) && \
 	cmake -S $(RMM_DIR)/ -B $(RMM_DIR)/build \
+		-DCROSS_COMPILE=$(CROSS_COMPILE) \
 		-DRMM_CONFIG=rk3588_defcfg \
 		-DLOG_LEVEL=$(LOG) \
 		-DCMAKE_BUILD_TYPE=$(RMM_BUILD_TYPE) \
@@ -129,5 +137,5 @@ uboot-menuconfig:  ## run menuconfig for uboot
 
 
 
-
+clean: tfa-clean rmm-clean uboot-clean ## clean all
 

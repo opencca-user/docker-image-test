@@ -10,6 +10,9 @@ UBOOT_DIR ?= $(ROOT_DIR)/u-boot
 RKBIN_DIR ?= $(ROOT_DIR)/rkbin
 ASSETS_DIR ?= $(ROOT_DIR)/opencca-assets
 
+OPENCCA_BUILD_DIR ?= $(ROOT_DIR)/opencca-build
+OPENCCA_FLASH_DIR ?= $(ROOT_DIR)/opencca-flash
+
 BUILDROOT_DIR ?= $(ROOT_DIR)/buildroot
 
 export SNAPSHOT_DIR ?= $(ROOT_DIR)/snapshot
@@ -17,8 +20,8 @@ export SNAPSHOT_DIR ?= $(ROOT_DIR)/snapshot
 DEBOS_DIR ?= $(ROOT_DIR)/debian-image-recipes
 
 NPROC ?= $(shell nproc)
-MAKEFLAGS += -j$(NPROC)
-MAKE += $(MAKEFLAGS)
+export MAKEFLAGS += -j$(NPROC)
+
 
 
 help: ## Print this help message
@@ -40,9 +43,9 @@ help: ## Print this help message
 		{printf "  \033[33m%-25s\033[0m %-3s \033[32m%s\033[0m \n", $$1, $$2, $$3}' $(MAKEFILE_LIST)
 
 		
-
-
-
-# # Export all Makefile variables for bash
-# print-vars:  
-# 	@awk -F ' \\?= | = ' '/^[A-Z0-9_-]+( \\?= | = )/ {print "export " $$1 "=" $$2}' $(MAKEFILE_LIST)
+print-vars:
+	@$(foreach v, $(.VARIABLES), \
+        $(if $(filter-out environment% default automatic, $(origin $v)), \
+            $(info $v=$($v)) \
+        ) \
+    )
