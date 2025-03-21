@@ -1,14 +1,13 @@
 # OpenCCA
 
+
 ### Getting Started
 
-We build opencca in a docker container. To get started, ensure to have the following
+We build OpenCCA in a docker container. To get started, ensure to have the following
 dependencies installed:
 
-Docker, git, repo, make
+ > repo, git, make, docker
 
-<details>
-<summary>Prerequisites: Install git-repo tool</summary>
 <details>
 <summary>Prerequisite: Install git-repo tool</summary>
 
@@ -27,7 +26,7 @@ chmod a+rx ~/.bin/repo
 </details>  
 
 <details>
-<summary>Prerequisite: Install Docker</summary>
+<summary>Prerequisite: Install docker</summary>
 
 For installation methods see https://docs.docker.com/engine/install/
 
@@ -61,26 +60,44 @@ docker run hello-world
 ```
 </details>  
 
+<details>
+<summary>Prerequisite: Install make</summary>
 
+```sh
+# On Ubuntu
+sudo apt install -y make
+```
+
+</details>
+
+<details>
+<summary>Prerequisite: Install git</summary>
+
+```sh
+# On Ubuntu
+sudo apt install -y git
+```
+
+</details>
+
+
+
+### Building OpenCCA
 ```
 # Clone repositories
-mkdir opencca && cd opencca
+mkdir opencca opencca/snapshot && cd opencca
 repo init -u git@github.com:opencca/opencca-manifest.git -b opencca/main -m default.xml 
 repo sync -j$(nproc) --all
 
-repo start aster --all
-
-# Build container
-cd opencca-build/docker/
-make build
-
-# Start container
+# Build and enter container
+make -f opencca-build/docker/Makefile help
+make -f opencca-build/docker/Makefile build
 make -f opencca-build/docker/Makefile start
-
-# Enter container
 make -f opencca-build/docker/Makefile enter
 
-# in container: build all components
+# Build all components (inside container)
 cd opencca-build/scripts/ && build_all.sh
 ```
 
+Upon build completion, you find all build artifacts in /opencca/snapshot.
+What's next is to flash the firmware on the hardware.

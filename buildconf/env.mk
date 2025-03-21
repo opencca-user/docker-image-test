@@ -1,4 +1,6 @@
-ROOT_DIR ?= $(realpath ../../)
+.THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
+.THIS_DIR :=  $(realpath $(dir $(.THIS_MAKEFILE)))
+ROOT_DIR := $(.THIS_DIR)/../../
 
 KVMTOOL_DIR ?= $(ROOT_DIR)/kvmtool
 LINUX_DIR ?= $(ROOT_DIR)/linux
@@ -21,7 +23,6 @@ DEBOS_DIR ?= $(ROOT_DIR)/debian-image-recipes
 
 NPROC ?= $(shell nproc)
 export MAKEFLAGS += -j$(NPROC)
-
 
 
 help: ## Print this help message

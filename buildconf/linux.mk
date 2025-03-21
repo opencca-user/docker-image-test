@@ -21,24 +21,29 @@ DEVICE_DTB_WARNINGS := dt-warnings.txt
 DEVICE_TREE_IGNORE_WARNINGS ?=0
 
 .PHONY: dt
+.ONESHELL: dt
 dt: kconfig ## Build device tree for kernel	
-	
-    # Create device trees
-	+$(MAKE) -C $(LINUX_DIR) dt_binding_check
-	+$(MAKE) -C $(LINUX_DIR) dtbs
-	cp -f $(DEVICE_DTB_PATH) $(SNAPSHOT_DTB).prevalidation
-    
-	cd $(LINUX_DIR) && +$(MAKE) -C $(LINUX_DIR) CHECK_DTBS=y \
-		$(DEVICE_DTB)
+	cd $(LINUX_DIR)
 
-    # Check for warnings
+    # Create device trees
+	+$(MAKE) -C $(LINUX_DIR) dt_binding_check DTBS=$(DEVICE_DTB)
+	+$(MAKE) -C $(LINUX_DIR) dtbs
+
+	cd $(LINUX_DIR) && \
+		cp -f $(DEVICE_DTB_PATH) $(SNAPSHOT_DTB).prevalidation
+    
+	cd $(LINUX_DIR) && \
+		$(MAKE) -C $(LINUX_DIR) CHECK_DTBS=y $(DEVICE_DTB) 2> $(DEVICE_DTB_WARNINGS) || true
+
 	if [ -s "$(DEVICE_DTB_WARNINGS)" ]; then
-		cat "$(DEVICE_DTB_WARNINGS)"
-		echo "Warnings in device tree"
+		cat "$(DEVICE_DTB_WARNINGS)" 
+		echo "Warnings in device tree" 
 	fi
 
-	rm -f $(SNAPSHOT_DTB).prevalidation
-	cp -rf $(DEVICE_DTB_PATH) $(SNAPSHOT_DTB)
+	cd $(LINUX_DIR) && \
+		rm -f $(SNAPSHOT_DTB).prevalidation && \
+		cp -rf $(DEVICE_DTB_PATH) $(SNAPSHOT_DTB)
+
 	dtc -I dtb -O dts -o $(SNAPSHOT_DTB) $(SNAPSHOT_DTB).txt > /dev/null 2>&1
 
 # ---------------

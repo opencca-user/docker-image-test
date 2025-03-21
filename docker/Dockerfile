@@ -79,7 +79,8 @@ RUN apt-get update && \
     dbus \
     systemd systemd-resolved \
     mmdebstrap \
-    pigz
+    pigz \
+    user-mode-linux 
 
     
 RUN apt install -y golang git libglib2.0-dev libostree-dev qemu-system-x86 \
