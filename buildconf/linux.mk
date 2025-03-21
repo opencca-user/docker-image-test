@@ -99,9 +99,10 @@ devel: ## Build kernel without re-generating .config first (devel)
 # ---------------
 
 BUILD_TIMESTAMP := $$(date +%Y-%m-%d_%H-%M-%S)
-RELEASE_DIR = $(LINUX_DIR)/../linux-release/$(BUILD_TIMESTAMP)_$(KERNEL_VERSION)
+DEBIAN_RELEASE_DIR ?= $(LINUX_DIR)/../linux-release/$(BUILD_TIMESTAMP)_$(KERNEL_VERSION) ## output dir for deb build
 KERNEL_VERSION = $(shell make -sC $(LINUX_DIR) kernelversion)$(LOCALVERSION)
 KDEB_PKGVERSION ?= $(KERNEL_VERSION)
+
 
 .PHONY: debian
 debian: ## Build kernel and package into .deb archive (requires initial kconfig)
@@ -115,11 +116,11 @@ debian: ## Build kernel and package into .deb archive (requires initial kconfig)
 
     # XXX: deb-pkg creates *.deb files in parent
     # directory of linux dir. We move these to their own folder.
-	mkdir -p $(RELEASE_DIR)
-	mv $(LINUX_DIR)/../linux-upstream* $(RELEASE_DIR)
-	mv $(LINUX_DIR)/../linux-*.deb $(RELEASE_DIR)
-	@echo "Files moved to $(RELEASE_DIR)"
-	ls -al $(RELEASE_DIR)/
+	mkdir -p $(DEBIAN_RELEASE_DIR)
+	mv $(LINUX_DIR)/../linux-upstream* $(DEBIAN_RELEASE_DIR)
+	mv $(LINUX_DIR)/../linux-*.deb $(DEBIAN_RELEASE_DIR)
+	@echo "Files moved to $(DEBIAN_RELEASE_DIR)"
+	ls -al $(DEBIAN_RELEASE_DIR)/
 
 .PHONY: menuconfig
 menuconfig: ## Launch kernel menuconfig
