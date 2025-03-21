@@ -95,8 +95,9 @@ rmm-clean: ## clean rmm
 
 UBOOT_ROCKCHIP_TPL := $(ASSETS_DIR)/rk3588/rk3588_ddr_lp4_2112MHz_lp5_2736MHz_v1.08.bin
 UBOOT_CONFIG := $(UBOOT_DIR)/.config
-UBOOT_FRAGMENT := $(UBOOT_DIR)/rk3588_fragment.config
+UBOOT_FRAGMENT ?= $(UBOOT_DIR)/rk3588_fragment.config ## Uboot fragment
 UBOOT_BIN := idbloader.img u-boot.itb u-boot-rockchip.bin u-boot-rockchip-spi.bin u-boot
+UBOOT_RELEASE := $(UBOOT_BIN) $(UBOOT_CONFIG) $(UBOOT_ROCKCHIP_TPL)
 
 uboot: ## uboot build
 	@echo "Building U-Boot..."
@@ -122,7 +123,7 @@ uboot: ## uboot build
 	-dtc -I dtb -O dts -o $(SNAPSHOT_DIR)/uboot-rk3588-rock-5b.dts \
 		$(SNAPSHOT_DIR)/uboot-rk3588-rock-5b.dtb > /dev/null 2>&1 &
 
-	cd $(UBOOT_DIR) && cp -rf $(UBOOT_BIN) $(SNAPSHOT_DIR)
+	cd $(UBOOT_DIR) && cp -rf $(UBOOT_RELEASE) $(SNAPSHOT_DIR)
 
 uboot-clean: ## clean uboot
 	cd $(UBOOT_DIR) && $(MAKE) distclean
