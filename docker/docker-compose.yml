@@ -5,7 +5,7 @@ services:
     build:
       context: ../
       dockerfile: docker/Dockerfile
-    image: opencca-build:latest
+    image: ghcr.io/opencca/opencca-build:latest
     container_name: opencca-build
     hostname: opencca-build
     privileged: true

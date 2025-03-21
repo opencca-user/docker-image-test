@@ -11,6 +11,10 @@ RUN /build/download-arm-toolchain.sh linux && \
 # stage: build container
 FROM debian:bookworm
 
+LABEL org.opencontainers.image.source=https://github.com/opencca/opencca-build
+LABEL org.opencontainers.image.description="OpencCCA Build Environment"
+LABEL org.opencontainers.image.licenses=MIT
+
 ENV DEBIAN_FRONTEND=noninteractive
 ENV IN_CONTAINER=1
 ENV HOME=/root
