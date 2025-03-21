@@ -17,7 +17,7 @@ ENV HOME=/root
 
 RUN apt update -y 
 RUN apt install -y build-essential autoconf automake libtool ccache device-tree-compiler
-RUN apt install -y emacs-nox nano vim sudo curl wget git repo \
+RUN apt install -y emacs-nox nano vim sudo curl wget git \
     unzip htop tmux screen bash-completion lsof fish tmux bash \
     iproute2 net-tools dnsutils iputils-ping traceroute socat tcpdump nmap \
     build-essential cmake pkg-config gdb gdb-multiarch strace  \
@@ -58,7 +58,7 @@ RUN apt install -y rsync build-essential git wget \
     autoconf bzip2 xz-utils patch curl pkg-config \
     cmake ninja-build device-tree-compiler libelf-dev \
     qemu-system qemu-user qemu-user-static dosfstools mtools \
-    genext2fs fakeroot libtool g++ zlib1g-dev gperf meso
+    genext2fs fakeroot libtool g++ zlib1g-dev gperf
 
 # Install Debos
 RUN apt-get update && \
