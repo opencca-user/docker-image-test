@@ -5,6 +5,7 @@
 # CROSS_COMPILE
 include env_aarch64.mk
 
+
 DTC_REPO := https://git.kernel.org/pub/scm/utils/dtc/dtc.git
 DTC_BRANCH := master
 DTC_DIR= $(KVMTOOL_DIR)/dtc
@@ -18,10 +19,17 @@ $(DTC_DIR):
 	git clone  -b $(DTC_BRANCH) $(DTC_REPO) $(DTC_DIR)
 
 dtc: $(DTC_DIR)
-	cd $(DTC_DIR) && make libfdt -j$(NPROC)
-
+    # XXX: libfdt does not respect CROSS_COMPILE
+	cd $(DTC_DIR) && \
+		$(MAKE) libfdt -j$(NPROC) \
+		CROSS_COMPILE=$(CROSS_COMPILE) \
+		CC=$(CC) \
+		ARCH=$(ARCH)
+			
+ 
 build: dtc ## build kvm tool
-	cd $(KVMTOOL_DIR) && make ARCH=$(ARCH) LIBFDT_DIR=$(LIBFDT_DIR) \
+	cd $(KVMTOOL_DIR) && \
+		$(MAKE) ARCH=$(ARCH) LIBFDT_DIR=$(LIBFDT_DIR) \
 		CROSS_COMPILE=$(CROSS_COMPILE) V=1 lkvm-static WERROR=0 -j$(NPROC)
 	-cp $(KVMTOOL_DIR)/lkvm-static $(SNAPSHOT_DIR)/lkvm	
 
