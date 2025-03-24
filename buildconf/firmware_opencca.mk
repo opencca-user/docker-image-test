@@ -108,7 +108,8 @@ uboot: ## uboot build
 
 	cd $(UBOOT_DIR) && \
 	$(MAKE) rock5b-rk3588_defconfig && \
-	scripts/kconfig/merge_config.sh -r $(UBOOT_CONFIG) $(UBOOT_FRAGMENT)
+	scripts/kconfig/merge_config.sh -r -m $(UBOOT_CONFIG) $(UBOOT_FRAGMENT) && \
+	$(MAKE) olddefconfig
 
 	cd $(UBOOT_DIR) && \
 	$(MAKE) -j$(NPROC) \
