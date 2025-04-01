@@ -24,7 +24,13 @@ BUILDCONF_DIR=$OPENCCA_BUILD_DIR/buildconf
 LOG_DIR="$SCRIPT_DIR/build_log"
 LOG_FILE="$LOG_DIR/stdout.log"
 
-build_order=(
+build_quick_start=(
+    build_kvmtool
+    build_linux
+    build_firmware
+)
+
+build_all=(
     build_kvmtool
     build_linux
     build_firmware
@@ -32,9 +38,6 @@ build_order=(
 )
 
 declare -A build_status
-for key in "${build_order[@]}"; do
-    build_status["$key"]="not executed"
-done
 
 trap 'echo "Error on line $LINENO with exit code $?" && exit 1' ERR SIGINT
 
@@ -63,19 +66,23 @@ function build_debos_rootfs_host {
 }
 
 function run_builds() {
+    build_order=("$@")
+
+    echo "Setting build_order: ${build_order[*]}"
+    for key in "${build_order[@]}"; do
+        build_status["$key"]="not executed"
+    done
+
     for func in "${build_order[@]}"; do
         log "\nBuilding $func...\n"
-        set -x
         $func 2>&1 | tee -a "$LOG_DIR/$func.log" \
             && build_status["$func"]="Success (see $func.log)" \
             || { build_status["$func"]="Failed (see $func.log)"; }
 
-        set +x
     done
 }
 
 function print_status() {
-    set +x
 
     log "\nBuild Summary:\n"
     for key in "${!build_status[@]}"; do
@@ -94,12 +101,22 @@ function print_status() {
     
 }
 
+
+
 # Main
 mkdir -p $LOG_DIR
 exec &> >(tee -a "$LOG_FILE")
 log "Date: $(date +%Y-%m-%d_%H-%M-%S):"
+echo "Executing command: ${1-} ..."
 
+# set -x
+build_seq=
+case "${1-}" in
+    all) build_seq=${build_all[@]} ;;
+    quick_start) build_seq=${build_quick_start[@]} ;;
+    help) echo "$0 all|quick_start"; exit ;;
+    *) build_seq=${build_quick_start[@]} ;;
+esac
 
-time run_builds
-
+time run_builds ${build_seq[@]}
 print_status
