@@ -1,6 +1,5 @@
 #!/usr/bin/make -f
 
-# we use same makefile in root and ./docker
 DOCKER_DIR := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 
 DOCKER = docker
@@ -11,7 +10,9 @@ SHELL_HISTORY = $(DOCKER_DIR)/.bash_history $(DOCKER_DIR)/.fish_history
 CACHE_DIR = $(DOCKER_DIR)/.cache
 SHELL := /bin/bash
 
-SERVICE_URL = ghcr.io/opencca/opencca-build:latest
+VERSION := latest
+SERVICE_URL := ghcr.io/opencca/opencca-build
+
 SERVICE = opencca-build
 
 .PHONY: help
@@ -26,7 +27,6 @@ help:
 	@echo "  stop          - Stop the container"
 	@echo "  clean         - Remove the container and unused images"
 
-
 .PHONY: setup
 setup:
 	touch $(SHELL_HISTORY)
@@ -34,7 +34,7 @@ setup:
 
 .PHONY: pull
 pull: setup
-	$(DOCKER) pull $(SERVICE_URL)
+	$(DOCKER) pull $(SERVICE_URL):$(VERSION)
 
 .PHONY: build
 build: setup
@@ -58,6 +58,24 @@ stop:
 	-$(DOCKER_COMPOSE) stop $(SERVICE)
 
 .PHONY: clean
+clean: SYSTEM=0
 clean:
-	docker rm -f $(SERVICE) $(SERVICE_URL) || true
-	docker volume rm $$(docker volume ls -qf dangling=true) &> /dev/null || true
+	$(DOCKER) rm -f $(SERVICE) $(SERVICE_URL) &> /dev/null ||  true
+	$(DOCKER) volume rm $$(docker volume ls -qf dangling=true) &> /dev/null || true
+	[[ $(SYSTEM) == 1 ]] && $(DOCKER) system prune -f || true
+
+# For CI
+.PHONY: release
+release: RELEASE_BUILD_DATE=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+release: RELEASE_VCS_REF=$(shell git rev-parse --short HEAD)
+release: RELEASE_VERSION=$(shell git describe --tags --always )
+release:
+	IMAGE_TAG=latest \
+	RELEASE_BUILD_DATE=$(RELEASE_BUILD_DATE) \
+	RELEASE_VCS_REF=$(RELEASE_VCS_REF) \
+	RELEASE_VERSION=$(RELEASE_VERSION) \
+	$(DOCKER_COMPOSE) build $(SERVICE)
+
+	$(DOCKER) tag $(SERVICE_URL):latest $(SERVICE_URL):$(RELEASE_VERSION)
+	$(DOCKER) push $(SERVICE_URL):$(RELEASE_VERSION)
+	$(DOCKER) push $(SERVICE_URL):latest

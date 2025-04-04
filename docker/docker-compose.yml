@@ -5,7 +5,11 @@ services:
     build:
       context: ../
       dockerfile: docker/Dockerfile
-    image: opencca-build
+      args:
+        RELEASE_BUILD_DATE: ${RELEASE_BUILD_DATE}
+        RELEASE_VCS_REF: ${RELEASE_VCS_REF}
+        RELEASE_VERSION: ${RELEASE_VERSION}
+    image: ghcr.io/opencca/opencca-build:latest
     container_name: opencca-build
     hostname: opencca-build
     privileged: true
@@ -24,4 +28,4 @@ services:
 
     working_dir: /opencca/
     stdin_open: true
-    tty: true    
+    tty: true
