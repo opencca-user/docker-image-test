@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: [opencca, ubuntu-latest]
+    runs-on: [opencca]
 
     steps:
       - name: Checkout code
