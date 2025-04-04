@@ -2,7 +2,7 @@
 
 This repository contains the Docker configuration for the OpenCCA build environment.
 
-The Dockerfile allow you to build and run a Docker container equipped with all necessary tools
+The Dockerfile allows you to build and run a Docker container equipped with all necessary tools
 for building OpenCCA.
 
 ## Makefile Goals
