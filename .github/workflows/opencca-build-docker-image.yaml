@@ -1,4 +1,12 @@
 name: opencca build docker image
+on:
+#  push:
+#    branches:
+#     - main
+# # release:
+#   types: [published]
+  workflow_dispatch: # Allows the workflow to be manually triggered
+
 jobs:
   build:
     runs-on: [self-hosted, opencca]
