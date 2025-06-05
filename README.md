@@ -101,3 +101,4 @@ cd opencca-build/scripts/ && build_all.sh
 
 Upon build completion, you find all build artifacts in /opencca/snapshot.
 What's next is to flash the firmware on the hardware.
+https://github.com/opencca/opencca-flash
