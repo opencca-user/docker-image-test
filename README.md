@@ -3,7 +3,7 @@
 
 ### Getting Started
 
-We build OpenCCA in a docker container. To get started, ensure to have the following
+We currently are building OpenCCA in an x86-docker container. To get started, ensure to have the following
 dependencies installed:
 
  > repo, git, make, docker
@@ -86,8 +86,8 @@ sudo apt install -y git
 ```
 # Clone repositories
 mkdir opencca opencca/snapshot && cd opencca
-repo init -u git@github.com:opencca/opencca-manifest.git -b opencca/main -m default.xml 
-repo sync -j$(nproc) --all
+repo init -u git@github.com:opencca/opencca-manifest.git -b opencca/main -m systex25.xml 
+repo sync --all
 
 # Build and enter container
 make -f opencca-build/docker/Makefile help
