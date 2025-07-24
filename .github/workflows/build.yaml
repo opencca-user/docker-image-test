@@ -41,7 +41,7 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/amd64
+          platforms: ${{ matrix.platforms }}
           build-args: |
             BUILD_DATE=${{ steps.flags.outputs.date }}
             BUILD_REF=${{ github.sha }}
@@ -50,3 +50,6 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.flags.outputs.short_sha }}
+          provenance: false # Disable provenance to avoid unknown/unknown
+          sbom: false       # Disable sbom to avoid unknown/unknown
+          outputs: type=image,name=target
