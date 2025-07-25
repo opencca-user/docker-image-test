@@ -1,5 +1,4 @@
- [![ci](https://github.com/opencca/opencca-build/actions/workflows/ci.yaml/badge.svg)](https://github.com/opencca/opencca-build/actions/workflows/ci.yaml)
-
+ [![build](https://github.com/opencca/opencca-build/actions/workflows/build.yaml/badge.svg)](https://github.com/opencca/opencca-build/actions/workflows/build.yaml) [![publish-container](https://github.com/opencca/opencca-build/actions/workflows/publish.yaml/badge.svg)](https://github.com/opencca/opencca-build/pkgs/container/opencca-build)
 
 # OpenCCA
 
