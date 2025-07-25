@@ -2,6 +2,7 @@
 FROM debian:bookworm AS toolchain
 ENV DEBIAN_FRONTEND=noninteractive
 
+# TODO: Strip down /build for smaller image size
 WORKDIR /build
 RUN apt-get update && apt-get install -y \
     curl \
@@ -174,6 +175,7 @@ ENV PATH="/root/.local/bin:/build/aarch64-none-elf/bin:/build/aarch64-none-linux
 # Toolchain
 COPY --from=toolchain /build/ /build/
 
+# TODO: Do not release this in image, use volume instead
 # Ccache
 ENV CCACHE_DIR="/build/.ccache"
 RUN ccache --max-size=10G
@@ -196,15 +198,20 @@ RUN curl -o /usr/local/bin/repo https://storage.googleapis.com/git-repo-download
 RUN git config --global --add safe.directory "*"
 
 # For CI build
-ARG RELEASE_BUILD_DATE
-ARG RELEASE_VCS_REF
-ARG RELEASE_VERSION
-LABEL org.opencontainers.image.created=$RELASE_BUILD_DATE
-LABEL org.opencontainers.image.version=$RELASE_VERSION
-LABEL org.opencontainers.image.revision=$RELASE_VCS_REF
-LABEL org.opencontainers.image.source="https://github.com/opencca/opencca-build"
-LABEL org.opencontainers.image.description="OpenCCA Build Environment"
+ARG BUILD_DATE=none
+ARG BUILD_REF=unknown
+ARG BUILD_VERSION=none
+
+# Labels
+LABEL org.opencontainers.image.title="opencca-build"
+LABEL org.opencontainers.image.description="Build Environment to build OpenCCA."
+LABEL org.opencontainers.image.vendor="OpenCCA"
 LABEL org.opencontainers.image.authors="Andrin Bertschi <hi@abertschi.ch>"
 LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.url="https://opencca.github.io"
+LABEL org.opencontainers.image.source="https://github.com/opencca/opencca-build"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.revision="${BUILD_REF}"
+LABEL org.opencontainers.image.version="${BUILD_VERSION}"
 
 CMD ["/bin/bash"]

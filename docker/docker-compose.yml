@@ -1,15 +1,14 @@
 version: "3.9"
-
 services:
-  opencca-build:
+  opencca-build: # XXX: Must match SERVICE name in Makefile
     build:
       context: ../
       dockerfile: docker/Dockerfile
       args:
-        RELEASE_BUILD_DATE: ${RELEASE_BUILD_DATE}
-        RELEASE_VCS_REF: ${RELEASE_VCS_REF}
-        RELEASE_VERSION: ${RELEASE_VERSION}
-    image: ghcr.io/opencca/opencca-build:latest
+        BUILD_DATE: ${BUILD_DATE}
+        BUILD_REF: ${BUILD_REF}
+        BUILD_VERSION: ${BUILD_VERSION}
+    image: ghcr.io/opencca/opencca-build:latest # XXX: Must match SERVICE_URL in Makefile
     container_name: opencca-build
     hostname: opencca-build
     privileged: true
