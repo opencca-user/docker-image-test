@@ -7,9 +7,14 @@
 #
 
 DOCKER_DIR := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
-
 DOCKER = docker
-DOCKER_COMPOSE = $(DOCKER) compose -f $(DOCKER_DIR)/docker-compose.yml
+
+# XXX: Set UID/GID in compose file to avoid root/user permission issues
+DOCKER_UID ?= $(shell id -u)
+DOCKER_GID ?= $(shell id -g)
+
+DOCKER_COMPOSE = DOCKER_UID=$(DOCKER_UID) DOCKER_GID=$(DOCKER_GID) $(DOCKER) \
+				 compose -f $(DOCKER_DIR)/docker-compose.yml
 
 SRC_DIR = /opencca
 SHELL_HISTORY = $(DOCKER_DIR)/.bash_history $(DOCKER_DIR)/.fish_history
