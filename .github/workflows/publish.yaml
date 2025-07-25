@@ -9,6 +9,10 @@ on:
         description: "[version: e.g. v1.0.0]"
         required: false
 
+concurrency:
+  group: schedule-${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   build-and-push:
     runs-on: self-hosted

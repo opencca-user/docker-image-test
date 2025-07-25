@@ -8,6 +8,10 @@ on:
       - opencca/main
   workflow_dispatch:
 
+concurrency:
+  group: schedule-${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   build-and-push:
     runs-on: self-hosted
