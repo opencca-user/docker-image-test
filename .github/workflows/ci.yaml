@@ -1,0 +1,64 @@
+name: release-container
+#
+# opencca-build CI/build workflow
+#
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: self-hosted
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Check for required tools
+        id: check-tools
+        # XXX: In the self hosted runner we dont use sudo
+        # so ensure all build requirements are pre-installed
+        run: |
+          for cmd in docker make repo git; do
+            if ! command -v "$cmd" >/dev/null 2>&1; then
+              echo "$cmd is not installed. Aborting."
+              exit 1
+            fi
+          done
+          echo "All required tools are installed."
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build flags
+        id: flags
+        run: |
+          echo "date=$(date +"%Y-%m-%dT%H:%M:%SZ")" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve build version
+        id: resolve_version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "build_version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "build_version=${{ steps.flags.outputs.short_sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image using Makefile
+        run: |
+          cd docker && make build \
+            CACHE=1 \
+            BUILD_DATE="${{ steps.flags.outputs.date }}" \
+            BUILD_REF="${{ github.sha }}" \
+            BUILD_VERSION="${{ steps.resolve_version.outputs.build_version }}"  
