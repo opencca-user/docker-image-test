@@ -95,9 +95,8 @@ run-script:
 		exit 1; \
 	fi
 	$(DOCKER_COMPOSE) run --rm \
-		-v $(PWD)/$(SCRIPT):/script.sh \
-		$(SERVICE) bash /script.sh
-
+		-v $(SCRIPT):/script.sh $(SERVICE) \
+		bash /script.sh
 
 .PHONY: stop
 stop:
