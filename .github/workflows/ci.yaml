@@ -3,6 +3,9 @@ name: ci
 # opencca-build CI/build workflow
 #
 on:
+  push:
+    branches:
+      - opencca/main
   workflow_dispatch:
 
 jobs:
