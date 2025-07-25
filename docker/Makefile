@@ -87,6 +87,18 @@ enter:
 run:
 	$(DOCKER_COMPOSE) run --rm $(SERVICE) $(CMD)
 
+# XXX: For CI: Run a script inside the container
+.PHONY: run-script
+run-script:
+	@if [ -z "$(SCRIPT)" ]; then \
+		echo "Error: SCRIPT variable not set."; \
+		exit 1; \
+	fi
+	$(DOCKER_COMPOSE) run --rm \
+		-v $(PWD)/$(SCRIPT):/script.sh \
+		$(SERVICE) bash /script.sh
+
+
 .PHONY: stop
 stop:
 	-$(DOCKER_COMPOSE) stop $(SERVICE)
