@@ -10,8 +10,8 @@ DOCKER_DIR := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 DOCKER = docker
 
 # XXX: Set UID/GID in compose file to avoid root/user permission issues
-DOCKER_UID ?= $(shell id -u)
-DOCKER_GID ?= $(shell id -g)
+export DOCKER_UID ?= $(shell id -u)
+export DOCKER_GID ?= $(shell id -g)
 
 DOCKER_COMPOSE = DOCKER_UID=$(DOCKER_UID) DOCKER_GID=$(DOCKER_GID) $(DOCKER) \
 				 compose -f $(DOCKER_DIR)/docker-compose.yml
@@ -33,9 +33,9 @@ VERSION_PUSH = latest
 SERVICE_URL = ghcr.io/opencca/opencca-build
 SERVICE = opencca-build
 
-BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-BUILD_REF ?= $(shell git rev-parse HEAD)
-BUILD_VERSION ?= $(shell git rev-parse --short HEAD)
+export BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+export BUILD_REF ?= $(shell git rev-parse HEAD)
+export BUILD_VERSION ?= $(shell git rev-parse --short HEAD)
 
 CACHE ?=0
 

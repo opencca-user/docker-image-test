@@ -194,6 +194,20 @@ ENV PATH="/build/gocode/bin:$PATH"
 RUN curl -o /usr/local/bin/repo https://storage.googleapis.com/git-repo-downloads/repo && \
     chmod a+x /usr/local/bin/repo
 
+# Install fixuid to fix host/ docker permissions
+RUN    addgroup --gid 1000 opencca \
+    && adduser --uid 1000 --ingroup opencca \
+    --home /home/opencca --shell /bin/sh \
+    --disabled-password --gecos "" opencca
+
+COPY docker/bin/fixuid-0.6.0-linux-amd64 /usr/local/bin/fixuid
+RUN USER=opencca GROUP=opencca \
+    && chown root:root /usr/local/bin/fixuid \
+    && chmod 4755 /usr/local/bin/fixuid \
+    && mkdir -p /etc/fixuid \
+    && printf "user: $USER\ngroup: $GROUP\n" > /etc/fixuid/config.yml \
+    && echo "opencca ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
 # Allow git inside container
 RUN git config --global --add safe.directory "*"
 
@@ -215,3 +229,6 @@ LABEL org.opencontainers.image.revision="${BUILD_REF}"
 LABEL org.opencontainers.image.version="${BUILD_VERSION}"
 
 CMD ["/bin/bash"]
+USER opencca:opencca
+ENV HOME /home/opencca
+ENTRYPOINT ["/usr/local/bin/fixuid"]
